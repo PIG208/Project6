@@ -41,6 +41,7 @@ public class DiverMin implements SewerDiver {
 	 * A suggested first implementation that will always find the ring, but <br>
 	 * likely won't receive a large bonus multiplier, is a depth-first walk. <br>
 	 * Some modification is necessary to make the search better, in general. */
+	static final int EX_PRIOR = 1;
 	static Heap<Node, Integer> headHeap;
 	HashSet<Long> visited;
 	
@@ -48,15 +49,14 @@ public class DiverMin implements SewerDiver {
 	public void find(FindState state) {
 		//consider whether last move approaches the destination
 		visited 					   			   = new HashSet<Long>(); 
-		AdjacencyListGraph<Long, Integer> mapGraph = new AdjacencyListGraph<Long, Integer>();
+		
 		/*Heap<Node, Integer>*/ headHeap 		   = new Heap<Node, Integer>(Comparator.reverseOrder());
 
-		headHeap.add(new Node(mapGraph, state.currentLocation(), state.distanceToRing()), state.distanceToRing());
+		headHeap.add(new Node(state.currentLocation(), state.distanceToRing()), state.distanceToRing());
 		
 		while(state.distanceToRing() > 0) {
-			Node source = headHeap.poll();
-			navigateTo(state, Node.getNode(state.currentLocation()), source);
-			visited.add(source.id);
+			Node source = Node.getNode(state.currentLocation());
+			Node optimal = headHeap.peek();
 			
 			for(NodeStatus nodeStatus : state.neighbors()) {
 				if(!visited.contains(nodeStatus.getId())) {
@@ -64,13 +64,20 @@ public class DiverMin implements SewerDiver {
 					if(Node.contains(nodeStatus.getId()))
 						target = Node.getNode(nodeStatus.getId());
 					else {
-						target = new Node(mapGraph, nodeStatus.getId(), nodeStatus.getDistanceToTarget());
+						target = new Node(nodeStatus.getId(), nodeStatus.getDistanceToTarget());
 						headHeap.add(target, nodeStatus.getDistanceToTarget());
 					}
-					mapGraph.addEdge(source.node, target.node, 1);
-					mapGraph.addEdge(target.node, source.node, 1);
+					
+					Node.connect(source, target);
+					
+					if(target.distance - EX_PRIOR < optimal.distance)
+						optimal = target;
 				}
 			}
+			if(optimal.equals(headHeap.peek()))
+				optimal = headHeap.poll();
+			navigateTo(state, Node.getNode(state.currentLocation()), optimal);
+			visited.add(optimal.id);
 			
 		}
 		return;
@@ -90,17 +97,32 @@ public class DiverMin implements SewerDiver {
 	private static class Node {
 		static HashMap<Long, Node> nodeMap = new HashMap<Long, Node>();
 		 
+		static AdjacencyListGraph<Long, Integer> mapGraph = new AdjacencyListGraph<Long, Integer>();
+		
 		AdjacencyListGraph<Long, Integer>.Node node;
+		
+		HashSet<Node> AdjancentList; 
 		
 		long id;
 		
 		int distance;
 		
-		Node(AdjacencyListGraph<Long, Integer> graph, long id, int distance) {
+		Node(long id, int distance) {
 			this.id = id;
 			this.distance = distance;
-			node = graph.addNode(id);
+			AdjancentList = new HashSet<Node>();
+			node = mapGraph.addNode(id);
 			nodeMap.put(id, this);
+		}
+		
+		static void connect(Node n1, Node n2) {
+			if(n1.AdjancentList.contains(n2))
+				return;
+			
+			n1.AdjancentList.add(n2);
+			n2.AdjancentList.add(n1);
+			mapGraph.addEdge(n1.node, n2.node, 1);
+			mapGraph.addEdge(n2.node, n1.node, 1);
 		}
 		
 		static boolean contains(Long id) {
