@@ -1,15 +1,17 @@
 package student;
 
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import a4.Heap;
 import a5.GraphAlgorithms;
 import game.FindState;
 import game.FleeState;
 import game.NodeStatus;
 import game.SewerDiver;
-import game.Node;
+import graph.AdjacencyListGraph;
 
 import common.NotImplementedError;
 
@@ -39,9 +41,67 @@ public class DiverMin implements SewerDiver {
 	 * A suggested first implementation that will always find the ring, but <br>
 	 * likely won't receive a large bonus multiplier, is a depth-first walk. <br>
 	 * Some modification is necessary to make the search better, in general. */
+	static Heap<Node, Integer> headHeap;
 	@Override
 	public void find(FindState state) {
-    throw new NotImplementedError();
+		//consider whether last move approaches the destination
+		HashSet<Long> visited 					   = new HashSet<Long>(); 
+		AdjacencyListGraph<Long, Integer> mapGraph = new AdjacencyListGraph<Long, Integer>();
+		/*Heap<Node, Integer>*/ headHeap 			   = new Heap<Node, Integer>(Comparator.reverseOrder());
+
+		headHeap.add(new Node(mapGraph, state.currentLocation()), state.distanceToRing());
+		
+		while(state.distanceToRing() > 0) {
+			Node source = headHeap.poll();
+			System.out.println(source.id);
+			visited.add(source.id);
+			navigateTo(state, Node.getNode(state.currentLocation()), source);
+			
+			for(NodeStatus nodeStatus : state.neighbors()) {
+				if(!visited.contains(nodeStatus.getId())) {
+					Node target = new Node(mapGraph, nodeStatus.getId());
+					mapGraph.addEdge(source.node, target.node, 1);
+					mapGraph.addEdge(target.node, source.node, 1);
+					headHeap.add(target, state.distanceToRing());
+				}
+			}
+		}
+		return;
+	}
+	//-8915455580838214402
+	private static class Node {
+		static HashMap<Long, Node> nodeMap = new HashMap<Long, Node>();
+		 
+		AdjacencyListGraph<Long, Integer>.Node node;
+		
+		Long id;
+		
+		Node(AdjacencyListGraph<Long, Integer> graph, Long id) {
+			this.id = id;
+			node = graph.addNode(id);
+			nodeMap.put(id, this);
+		}
+		
+		static Node getNode(Long id) {
+			return nodeMap.get(id);
+		}
+		
+	}
+	
+	private void navigateTo(FindState state, Node source, Node target) {
+		List<AdjacencyListGraph<Long, Integer>.Node> path = GraphAlgorithms.shortestPath(source.node, target.node);
+		System.out.printf("from %s to %s, path: %d\n", Long.toString(source.id), Long.toString(target.id), path.size());
+		for(AdjacencyListGraph<Long, Integer>.Node node:path) {
+			System.out.printf("going to %s\n", node.toString());
+			if(state.currentLocation() == node.getData()) {
+				System.out.printf("skipped %s\n", node.toString());
+				continue;
+			}
+			state.moveTo(node.getData());
+			System.out.printf("moved to %s\n", node.toString());
+			System.out.println("size: " + headHeap.size());
+		}
+		System.out.println("==========================");
 	}
 	
 	/** Flee the sewer system before the steps are all used, trying to <br>
@@ -70,7 +130,7 @@ public class DiverMin implements SewerDiver {
 	 * the exit. */
 	@Override
 	public void flee(FleeState state) {
-    throw new NotImplementedError();
+		throw new NotImplementedError();
 	}
 
 }
