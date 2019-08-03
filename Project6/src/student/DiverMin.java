@@ -1,8 +1,10 @@
 package student;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import a4.Heap;
@@ -137,31 +139,39 @@ public class DiverMin implements SewerDiver {
 	
 	private void navigateTo(FindState state, Node source, Node target) {
 		List<AdjacencyListGraph<Long, Integer>.Node> path = GraphAlgorithms.shortestPath(source.node, target.node);
-		System.out.printf("from %s to %s, path: %d\n", Long.toString(source.id), Long.toString(target.id), path.size());
 		for(AdjacencyListGraph<Long, Integer>.Node node:path) {
 			if(state.currentLocation() == node.getData()) {
 				continue;
 			}
 			state.moveTo(node.getData());
 			visited.add(node.getData());
-			System.out.printf("moved to %s\n", node.toString());
-			System.out.println("size: " + headHeap.size());
 		}
 		System.out.println("==========================");
 	}
 	
+	private int getPathLength(List<game.Node> path) {
+		Iterator<game.Node> itr = path.iterator();
+		game.Node prevNode = itr.next();
+		int sum = 0;
+		while(itr.hasNext()) {
+			game.Node temp = itr.next();
+			sum += prevNode.getEdge(temp).length;
+			prevNode = temp;
+		}
+		return sum;
+	}
+	
 	private void navigateTo(FleeState state, game.Node source, game.Node target) {
 		List<game.Node> path = GraphAlgorithms.shortestPath(source, target);
+		int start = state.stepsLeft();
 		for(game.Node node:path) {
-			System.out.printf("going to %s\n", node.toString());
-			if(state.currentNode().equals(node))
+			if(state.currentNode().equals(node)) {
 				continue;
+			}
 			state.moveTo(node);
-			System.out.printf("moved to %s\n", node.toString());
-			System.out.println("size: " + headHeap.size());
 		}
-		System.out.println("==========================");
 	}
+	
 	/** Flee the sewer system before the steps are all used, trying to <br>
 	 * collect as many coins as possible along the way. Your solution must ALWAYS <br>
 	 * get out before the steps are all used, and this should be prioritized above<br>
@@ -188,19 +198,18 @@ public class DiverMin implements SewerDiver {
 	 * the exit. */
 	@Override
 	public void flee(FleeState state) {
-
+		
 		for(game.Node node : state.allNodes()) {
-			if(GraphAlgorithms.shortestPath(state.currentNode(), node).size() 
-					+ GraphAlgorithms.shortestPath(node, state.getExit()).size()  
-					<= state.stepsLeft()-50 && !(visited.contains(node)))
+			int pred = getPathLength(GraphAlgorithms.shortestPath(state.currentNode(), node)) 
+					+ getPathLength(GraphAlgorithms.shortestPath(node, state.getExit()));
+			int steps = state.stepsLeft();
+			if(pred >= steps)
+				continue;
+			else {
 				navigateTo(state, state.currentNode(), node);
-			else
-			{
-				navigateTo(state, state.currentNode(), state.getExit());
-				return;
 			}
-			
 		}
+		navigateTo(state, state.currentNode(), state.getExit());
 	}
 
 }
