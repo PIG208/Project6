@@ -42,44 +42,69 @@ public class DiverMin implements SewerDiver {
 	 * likely won't receive a large bonus multiplier, is a depth-first walk. <br>
 	 * Some modification is necessary to make the search better, in general. */
 	static Heap<Node, Integer> headHeap;
+	HashSet<Long> visited;
+	
 	@Override
 	public void find(FindState state) {
 		//consider whether last move approaches the destination
-		HashSet<Long> visited 					   = new HashSet<Long>(); 
+		visited 					   			   = new HashSet<Long>(); 
 		AdjacencyListGraph<Long, Integer> mapGraph = new AdjacencyListGraph<Long, Integer>();
-		/*Heap<Node, Integer>*/ headHeap 			   = new Heap<Node, Integer>(Comparator.reverseOrder());
+		/*Heap<Node, Integer>*/ headHeap 		   = new Heap<Node, Integer>(Comparator.reverseOrder());
 
-		headHeap.add(new Node(mapGraph, state.currentLocation()), state.distanceToRing());
+		headHeap.add(new Node(mapGraph, state.currentLocation(), state.distanceToRing()), state.distanceToRing());
 		
 		while(state.distanceToRing() > 0) {
 			Node source = headHeap.poll();
-			System.out.println(source.id);
-			visited.add(source.id);
 			navigateTo(state, Node.getNode(state.currentLocation()), source);
+			visited.add(source.id);
 			
 			for(NodeStatus nodeStatus : state.neighbors()) {
 				if(!visited.contains(nodeStatus.getId())) {
-					Node target = new Node(mapGraph, nodeStatus.getId());
+					Node target;
+					if(Node.contains(nodeStatus.getId()))
+						target = Node.getNode(nodeStatus.getId());
+					else {
+						target = new Node(mapGraph, nodeStatus.getId(), nodeStatus.getDistanceToTarget());
+						headHeap.add(target, nodeStatus.getDistanceToTarget());
+					}
 					mapGraph.addEdge(source.node, target.node, 1);
 					mapGraph.addEdge(target.node, source.node, 1);
-					headHeap.add(target, state.distanceToRing());
 				}
 			}
+			
 		}
 		return;
 	}
+	
+	/*private int noOfUnvisitedNeighbors(FindState state) {
+		int visitCount = 0;
+		for(NodeStatus nodeStatus:state.neighbors()) {
+			if(!visited.contains(nodeStatus.getId())) {
+				visitCount++;
+			}
+		}
+		return visitCount;
+	}*/
+	
 	//-8915455580838214402
 	private static class Node {
 		static HashMap<Long, Node> nodeMap = new HashMap<Long, Node>();
 		 
 		AdjacencyListGraph<Long, Integer>.Node node;
 		
-		Long id;
+		long id;
 		
-		Node(AdjacencyListGraph<Long, Integer> graph, Long id) {
+		int distance;
+		
+		Node(AdjacencyListGraph<Long, Integer> graph, long id, int distance) {
 			this.id = id;
+			this.distance = distance;
 			node = graph.addNode(id);
 			nodeMap.put(id, this);
+		}
+		
+		static boolean contains(Long id) {
+			return nodeMap.containsKey(id);
 		}
 		
 		static Node getNode(Long id) {
@@ -92,18 +117,29 @@ public class DiverMin implements SewerDiver {
 		List<AdjacencyListGraph<Long, Integer>.Node> path = GraphAlgorithms.shortestPath(source.node, target.node);
 		System.out.printf("from %s to %s, path: %d\n", Long.toString(source.id), Long.toString(target.id), path.size());
 		for(AdjacencyListGraph<Long, Integer>.Node node:path) {
-			System.out.printf("going to %s\n", node.toString());
 			if(state.currentLocation() == node.getData()) {
-				System.out.printf("skipped %s\n", node.toString());
 				continue;
 			}
 			state.moveTo(node.getData());
+			visited.add(node.getData());
 			System.out.printf("moved to %s\n", node.toString());
 			System.out.println("size: " + headHeap.size());
 		}
 		System.out.println("==========================");
 	}
 	
+	private void navigateTo(FleeState state, game.Node source, game.Node target) {
+		List<game.Node> path = GraphAlgorithms.shortestPath(source, target);
+		for(game.Node node:path) {
+			System.out.printf("going to %s\n", node.toString());
+			if(state.currentNode().equals(node))
+				continue;
+			state.moveTo(node);
+			System.out.printf("moved to %s\n", node.toString());
+			System.out.println("size: " + headHeap.size());
+		}
+		System.out.println("==========================");
+	}
 	/** Flee the sewer system before the steps are all used, trying to <br>
 	 * collect as many coins as possible along the way. Your solution must ALWAYS <br>
 	 * get out before the steps are all used, and this should be prioritized above<br>
@@ -130,7 +166,7 @@ public class DiverMin implements SewerDiver {
 	 * the exit. */
 	@Override
 	public void flee(FleeState state) {
-		throw new NotImplementedError();
+		navigateTo(state, state.currentNode(), state.getExit());
 	}
 
 }
