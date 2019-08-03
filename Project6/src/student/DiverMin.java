@@ -188,7 +188,19 @@ public class DiverMin implements SewerDiver {
 	 * the exit. */
 	@Override
 	public void flee(FleeState state) {
-		navigateTo(state, state.currentNode(), state.getExit());
+
+		for(game.Node node : state.allNodes()) {
+			if(GraphAlgorithms.shortestPath(state.currentNode(), node).size() 
+					+ GraphAlgorithms.shortestPath(node, state.getExit()).size()  
+					<= state.stepsLeft()-50 && !(visited.contains(node)))
+				navigateTo(state, state.currentNode(), node);
+			else
+			{
+				navigateTo(state, state.currentNode(), state.getExit());
+				return;
+			}
+			
+		}
 	}
 
 }
