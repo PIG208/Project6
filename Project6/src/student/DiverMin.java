@@ -166,6 +166,7 @@ public class DiverMin implements SewerDiver {
 	 * exit using the shortest path, although this will not collect many coins.<br>
 	 * For this reason, a good starting solution is to use the shortest path to<br>
 	 * the exit. */
+	HashSet<game.Node> fleeVisited = new HashSet<game.Node>();
 	@Override
 	public void flee(FleeState state) {
 		/*for(game.Node node : GraphAlgorithms.dfs(state.currentNode())) {
@@ -175,20 +176,16 @@ public class DiverMin implements SewerDiver {
 			}
 		}*/
 		
-		Stack<game.Node> workList   = new Stack<game.Node>();
-		HashSet<game.Node> visited  = new HashSet<game.Node>();
-		
-		state.currentNode().getNeighbors().forEach(workList::push);
-		while(workList.size() > 0) {
-			game.Node curNode = workList.pop();
-			visited.add(curNode);
-			if(!navigateTo(state, state.currentNode(), curNode))
+		while(true) {
+			game.Node DST = bestDST(state);
+			for(game.Node node : GraphAlgorithms.shortestPath(state.currentNode(), DST))
+				fleeVisited.add(node);
+			if(!navigateTo(state, state.currentNode(), DST))
+			{
 				navigateTo(state, state.currentNode(), state.getExit());
-			
-			state.currentNode().getNeighbors().forEach(e -> {
-				if(!visited.contains(e))
-					workList.push(e);
-			});
+				break;
+			}
+				
 		}
 		
 		navigateTo(state, state.currentNode(), state.getExit());
@@ -240,6 +237,40 @@ public class DiverMin implements SewerDiver {
 				minimum = temp;
 		}
 		return minimum;
+	}
+	/** Find the shortest paths to all nodes(not including visited ones)
+	 * s
+	 * @param node
+	 * @return ArrayList
+	 */
+	private game.Node bestDST(FleeState state) {
+		int bestScore = Integer.MIN_VALUE;
+		game.Node bestDST = null;
+		for(game.Node node : state.allNodes()) {
+			List<game.Node> curPath = GraphAlgorithms.shortestPath(state.currentNode(), node);
+			List<game.Node> curPathToExit = GraphAlgorithms.shortestPath(node, state.getExit());
+			int pathScore = 0;
+			
+			for(game.Node n: curPath) {
+				if(fleeVisited.contains(n)) 
+					pathScore-=5;
+				else
+					pathScore++;
+			}
+			for(game.Node n : curPathToExit) {
+				if(fleeVisited.contains(n)) 
+					pathScore-=5;
+				else
+					pathScore++;
+			}
+			if(pathScore > bestScore) {
+				bestScore = pathScore;
+				bestDST = node;
+			}
+			System.out.println("path score is: " + pathScore);
+			System.out.println("best score is: " + bestScore);
+		}
+		return bestDST;
 	}
 
 }
