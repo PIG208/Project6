@@ -48,11 +48,11 @@ public class DiverMin implements SewerDiver {
 	 * Some modification is necessary to make the search better, in general. */
 	//The extra priority added to the neighbors
 	static final int EX_PRIOR = 1;
-	static final int VISITED_POS = 5;
-	static final int VISITED_NEG = 2;
-	static final int EX_VISITED_POS = 1;
-	static final int EX_VISITED_NEG = 2;
-	static final int MOVE_LIMIT = 100;
+	static final int VISITED_POS = 20;
+	static final int VISITED_NEG = 100;
+	static final int EX_VISITED_POS = 20;
+	static final int EX_VISITED_NEG = 100;
+	static final int MOVE_LIMIT = 63;
 	static Heap<Node, Integer> headHeap;
 	HashSet<Long> visited;
 	
@@ -188,7 +188,7 @@ public class DiverMin implements SewerDiver {
 				navigateTo(state, state.currentNode(), state.getExit());
 				break;
 			}
-				
+		
 		}
 		
 		navigateTo(state, state.currentNode(), state.getExit());
@@ -217,7 +217,7 @@ public class DiverMin implements SewerDiver {
 	 */
 	private boolean navigateTo(FleeState state, game.Node source, game.Node target) {
 		List<game.Node> path = shortestPath(source, target);
-		int start = state.stepsLeft();
+		//int start = state.stepsLeft();
 		for(game.Node node:path) {
 			if(state.currentNode().equals(node)) {
 				continue;
@@ -249,25 +249,29 @@ public class DiverMin implements SewerDiver {
 			List<game.Node> curPathToExit = GraphAlgorithms.shortestPath(node, state.getExit());
 			HashSet<game.Node> tempVisited = new HashSet<game.Node>();
 			int pathScore = 0;
-			
+			int noOfNodes = 0;
 			for(game.Node n: curPath) {
 				tempVisited.add(n);
+				noOfNodes++;
 				if(fleeVisited.contains(n)) 
 					pathScore-=VISITED_NEG;
 				else
-					pathScore+=VISITED_POS;
+					pathScore = (int)(pathScore + VISITED_POS - noOfNodes*0.9 + n.getTile().coins()*1.2);
+				
 			}
 			for(game.Node n : curPathToExit) {
+				noOfNodes++;
 				if(fleeVisited.contains(n) || tempVisited.contains(n)) 
 					pathScore-=EX_VISITED_NEG;
 				else
-					pathScore+=EX_VISITED_POS;
+					pathScore = (int)(pathScore + EX_VISITED_POS -noOfNodes*0.9 + n.getTile().coins()*1.5);
 			}
 			if(pathScore > bestScore) {
 				bestScore = pathScore;
 				bestDST = node;
 			}
 		}
+		
 		return bestDST;
 	}
 
