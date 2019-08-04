@@ -141,7 +141,7 @@ public class DiverMin implements SewerDiver {
 			visited.add(node.getData());
 		}
 	}
-	
+	//397714234465580674
 	/** Flee the sewer system before the steps are all used, trying to <br>
 	 * collect as many coins as possible along the way. Your solution must ALWAYS <br>
 	 * get out before the steps are all used, and this should be prioritized above<br>
@@ -168,6 +168,13 @@ public class DiverMin implements SewerDiver {
 	 * the exit. */
 	@Override
 	public void flee(FleeState state) {
+		/*for(game.Node node : GraphAlgorithms.dfs(state.currentNode())) {
+			if(!navigateTo(state, state.currentNode(), node)) {
+				navigateTo(state, state.currentNode(), state.getExit());
+				return;
+			}
+		}*/
+		
 		Stack<game.Node> workList   = new Stack<game.Node>();
 		HashSet<game.Node> visited  = new HashSet<game.Node>();
 		
@@ -221,6 +228,18 @@ public class DiverMin implements SewerDiver {
 			state.moveTo(node);
 		}
 		return true;
+	}
+	
+	/** Find the smallest edge in the given list*/
+	private game.Edge findSmallest(List<game.Edge> edges){
+		Iterator<game.Edge> itr = edges.iterator();
+		game.Edge minimum = itr.next();
+		while(itr.hasNext()) {
+			game.Edge temp = itr.next();
+			if(temp.length < minimum.length)
+				minimum = temp;
+		}
+		return minimum;
 	}
 
 }
