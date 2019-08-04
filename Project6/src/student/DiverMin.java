@@ -48,6 +48,11 @@ public class DiverMin implements SewerDiver {
 	 * Some modification is necessary to make the search better, in general. */
 	//The extra priority added to the neighbors
 	static final int EX_PRIOR = 1;
+	static final int VISITED_POS = 5;
+	static final int VISITED_NEG = 2;
+	static final int EX_VISITED_POS = 1;
+	static final int EX_VISITED_NEG = 2;
+	static final int MOVE_LIMIT = 100;
 	static Heap<Node, Integer> headHeap;
 	HashSet<Long> visited;
 	
@@ -178,8 +183,6 @@ public class DiverMin implements SewerDiver {
 		
 		while(true) {
 			game.Node DST = bestDST(state);
-			for(game.Node node : GraphAlgorithms.shortestPath(state.currentNode(), DST))
-				fleeVisited.add(node);
 			if(!navigateTo(state, state.currentNode(), DST))
 			{
 				navigateTo(state, state.currentNode(), state.getExit());
@@ -189,6 +192,7 @@ public class DiverMin implements SewerDiver {
 		}
 		
 		navigateTo(state, state.currentNode(), state.getExit());
+		System.out.printf("return with pos: %d, neg: %d, expos: %d, exneg: %d, movelimit: %d\n",VISITED_POS, VISITED_NEG, EX_VISITED_POS, EX_VISITED_NEG, MOVE_LIMIT);
 	}
 	
 	/**
@@ -223,21 +227,11 @@ public class DiverMin implements SewerDiver {
 					getPathLength(shortestPath(node, state.getExit())) > state.stepsLeft())
 					return false;
 			state.moveTo(node);
+			fleeVisited.add(node);
 		}
 		return true;
 	}
 	
-	/** Find the smallest edge in the given list*/
-	private game.Edge findSmallest(List<game.Edge> edges){
-		Iterator<game.Edge> itr = edges.iterator();
-		game.Edge minimum = itr.next();
-		while(itr.hasNext()) {
-			game.Edge temp = itr.next();
-			if(temp.length < minimum.length)
-				minimum = temp;
-		}
-		return minimum;
-	}
 	/** Find the shortest paths to all nodes(not including visited ones)
 	 * s
 	 * @param node
@@ -247,28 +241,32 @@ public class DiverMin implements SewerDiver {
 		int bestScore = Integer.MIN_VALUE;
 		game.Node bestDST = null;
 		for(game.Node node : state.allNodes()) {
+			if(fleeVisited.contains(node))
+				continue;
 			List<game.Node> curPath = GraphAlgorithms.shortestPath(state.currentNode(), node);
+			if(getPathLength(curPath) > MOVE_LIMIT)
+				continue;
 			List<game.Node> curPathToExit = GraphAlgorithms.shortestPath(node, state.getExit());
+			HashSet<game.Node> tempVisited = new HashSet<game.Node>();
 			int pathScore = 0;
 			
 			for(game.Node n: curPath) {
+				tempVisited.add(n);
 				if(fleeVisited.contains(n)) 
-					pathScore-=5;
+					pathScore-=VISITED_NEG;
 				else
-					pathScore++;
+					pathScore+=VISITED_POS;
 			}
 			for(game.Node n : curPathToExit) {
-				if(fleeVisited.contains(n)) 
-					pathScore-=5;
+				if(fleeVisited.contains(n) || tempVisited.contains(n)) 
+					pathScore-=EX_VISITED_NEG;
 				else
-					pathScore++;
+					pathScore+=EX_VISITED_POS;
 			}
 			if(pathScore > bestScore) {
 				bestScore = pathScore;
 				bestDST = node;
 			}
-			System.out.println("path score is: " + pathScore);
-			System.out.println("best score is: " + bestScore);
 		}
 		return bestDST;
 	}
