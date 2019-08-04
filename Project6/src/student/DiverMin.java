@@ -256,7 +256,7 @@ public class DiverMin implements SewerDiver {
 				if(fleeVisited.contains(n)) 
 					pathScore-=VISITED_NEG;
 				else
-					pathScore = (int)(pathScore + VISITED_POS - noOfNodes*0.9 + n.getTile().coins()*1.2);
+					pathScore = (int)(pathScore + VISITED_POS - noOfNodes*0.9 + n.getTile().coins()*1.1);
 				
 			}
 			for(game.Node n : curPathToExit) {
@@ -264,7 +264,7 @@ public class DiverMin implements SewerDiver {
 				if(fleeVisited.contains(n) || tempVisited.contains(n)) 
 					pathScore-=EX_VISITED_NEG;
 				else
-					pathScore = (int)(pathScore + EX_VISITED_POS -noOfNodes*0.9 + n.getTile().coins()*1.5);
+					pathScore = (int)(pathScore + EX_VISITED_POS -noOfNodes*0.9 + n.getTile().coins()*1.6);
 			}
 			if(pathScore > bestScore) {
 				bestScore = pathScore;
