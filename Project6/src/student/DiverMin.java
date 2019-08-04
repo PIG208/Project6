@@ -1,11 +1,14 @@
 package student;
 
+import static a5.GraphAlgorithms.shortestPath;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 import a4.Heap;
 import a5.GraphAlgorithms;
@@ -43,6 +46,7 @@ public class DiverMin implements SewerDiver {
 	 * A suggested first implementation that will always find the ring, but <br>
 	 * likely won't receive a large bonus multiplier, is a depth-first walk. <br>
 	 * Some modification is necessary to make the search better, in general. */
+	//The extra priority added to the neighbors
 	static final int EX_PRIOR = 1;
 	static Heap<Node, Integer> headHeap;
 	HashSet<Long> visited;
@@ -84,16 +88,6 @@ public class DiverMin implements SewerDiver {
 		}
 		return;
 	}
-	
-	/*private int noOfUnvisitedNeighbors(FindState state) {
-		int visitCount = 0;
-		for(NodeStatus nodeStatus:state.neighbors()) {
-			if(!visited.contains(nodeStatus.getId())) {
-				visitCount++;
-			}
-		}
-		return visitCount;
-	}*/
 	
 	//-8915455580838214402
 	private static class Node {
@@ -138,37 +132,13 @@ public class DiverMin implements SewerDiver {
 	}
 	
 	private void navigateTo(FindState state, Node source, Node target) {
-		List<AdjacencyListGraph<Long, Integer>.Node> path = GraphAlgorithms.shortestPath(source.node, target.node);
+		List<AdjacencyListGraph<Long, Integer>.Node> path = shortestPath(source.node, target.node);
 		for(AdjacencyListGraph<Long, Integer>.Node node:path) {
 			if(state.currentLocation() == node.getData()) {
 				continue;
 			}
 			state.moveTo(node.getData());
 			visited.add(node.getData());
-		}
-		System.out.println("==========================");
-	}
-	
-	private int getPathLength(List<game.Node> path) {
-		Iterator<game.Node> itr = path.iterator();
-		game.Node prevNode = itr.next();
-		int sum = 0;
-		while(itr.hasNext()) {
-			game.Node temp = itr.next();
-			sum += prevNode.getEdge(temp).length;
-			prevNode = temp;
-		}
-		return sum;
-	}
-	
-	private void navigateTo(FleeState state, game.Node source, game.Node target) {
-		List<game.Node> path = GraphAlgorithms.shortestPath(source, target);
-		int start = state.stepsLeft();
-		for(game.Node node:path) {
-			if(state.currentNode().equals(node)) {
-				continue;
-			}
-			state.moveTo(node);
 		}
 	}
 	
@@ -198,18 +168,59 @@ public class DiverMin implements SewerDiver {
 	 * the exit. */
 	@Override
 	public void flee(FleeState state) {
+		Stack<game.Node> workList   = new Stack<game.Node>();
+		HashSet<game.Node> visited  = new HashSet<game.Node>();
 		
-		for(game.Node node : state.allNodes()) {
-			int pred = getPathLength(GraphAlgorithms.shortestPath(state.currentNode(), node)) 
-					+ getPathLength(GraphAlgorithms.shortestPath(node, state.getExit()));
-			int steps = state.stepsLeft();
-			if(pred >= steps)
-				continue;
-			else {
-				navigateTo(state, state.currentNode(), node);
-			}
+		state.currentNode().getNeighbors().forEach(workList::push);
+		while(workList.size() > 0) {
+			game.Node curNode = workList.pop();
+			visited.add(curNode);
+			if(!navigateTo(state, state.currentNode(), curNode))
+				navigateTo(state, state.currentNode(), state.getExit());
+			
+			state.currentNode().getNeighbors().forEach(e -> {
+				if(!visited.contains(e))
+					workList.push(e);
+			});
 		}
+		
 		navigateTo(state, state.currentNode(), state.getExit());
+	}
+	
+	/**
+	 * Calculate the length of the given path based on the length of edges along the path 
+	 * @return the total length of the path, or 0 if there's only one node in the path
+	 */
+	private int getPathLength(List<game.Node> path) {
+		Iterator<game.Node> itr = path.iterator();
+		game.Node prevNode = itr.next();
+		int sum = 0;
+		while(itr.hasNext()) {
+			game.Node temp = itr.next();
+			sum += prevNode.getEdge(temp).length;
+			prevNode = temp;
+		}
+		return sum;
+	}
+	
+	/**
+	 * Continuously call state.moveTo until Min arrives at the destination or it's running out steps
+	 * @return false when Min must return
+	 */
+	private boolean navigateTo(FleeState state, game.Node source, game.Node target) {
+		List<game.Node> path = shortestPath(source, target);
+		int start = state.stepsLeft();
+		for(game.Node node:path) {
+			if(state.currentNode().equals(node)) {
+				continue;
+			}
+			if(!target.equals(state.getExit()) && 
+					getPathLength(shortestPath(state.currentNode(), node)) + 
+					getPathLength(shortestPath(node, state.getExit())) > state.stepsLeft())
+					return false;
+			state.moveTo(node);
+		}
+		return true;
 	}
 
 }
