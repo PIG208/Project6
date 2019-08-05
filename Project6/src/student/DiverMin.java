@@ -48,38 +48,40 @@ public class DiverMin implements SewerDiver {
 	 * Some modification is necessary to make the search better, in general. */
 	//The extra priority added to the neighbors
 	static final int EX_PRIOR = 1;
-	static final int VISITED_POS = 20;
-	static final int VISITED_NEG = 100;
-	static final int EX_VISITED_POS = 20;
-	static final int EX_VISITED_NEG = 100;
+	static final int VISITED_POS = 17;
+	static final int VISITED_NEG = 82;
+	static final int EX_VISITED_POS = 22;
+	static final int EX_VISITED_NEG = 132;
 	static final int MOVE_LIMIT = 63;
-	static Heap<Node, Integer> headHeap;
 	HashSet<Long> visited;
+	HashMap<Long, Node> nodeMap = new HashMap<Long, Node>();
+	 
+	AdjacencyListGraph<Long, Integer> mapGraph = new AdjacencyListGraph<Long, Integer>();
 	
 	@Override
 	public void find(FindState state) {
 		//consider whether last move approaches the destination
 		visited 					   			   = new HashSet<Long>(); 
 		
-		/*Heap<Node, Integer>*/ headHeap 		   = new Heap<Node, Integer>(Comparator.reverseOrder());
+		Heap<Node, Integer> headHeap 		   = new Heap<Node, Integer>(Comparator.reverseOrder());
 
 		headHeap.add(new Node(state.currentLocation(), state.distanceToRing()), state.distanceToRing());
 		
 		while(state.distanceToRing() > 0) {
-			Node source = Node.getNode(state.currentLocation());
+			Node source = getNode(state.currentLocation());
 			Node optimal = headHeap.peek();
 			
 			for(NodeStatus nodeStatus : state.neighbors()) {
 				if(!visited.contains(nodeStatus.getId())) {
 					Node target;
-					if(Node.contains(nodeStatus.getId()))
-						target = Node.getNode(nodeStatus.getId());
+					if(contains(nodeStatus.getId()))
+						target = getNode(nodeStatus.getId());
 					else {
 						target = new Node(nodeStatus.getId(), nodeStatus.getDistanceToTarget());
 						headHeap.add(target, nodeStatus.getDistanceToTarget());
 					}
 					
-					Node.connect(source, target);
+					connect(source, target);
 					
 					if(target.distance - EX_PRIOR < optimal.distance)
 						optimal = target;
@@ -87,7 +89,7 @@ public class DiverMin implements SewerDiver {
 			}
 			if(optimal.equals(headHeap.peek()))
 				optimal = headHeap.poll();
-			navigateTo(state, Node.getNode(state.currentLocation()), optimal);
+			navigateTo(state, getNode(state.currentLocation()), optimal);
 			visited.add(optimal.id);
 			
 		}
@@ -95,11 +97,7 @@ public class DiverMin implements SewerDiver {
 	}
 	
 	//-8915455580838214402
-	private static class Node {
-		static HashMap<Long, Node> nodeMap = new HashMap<Long, Node>();
-		 
-		static AdjacencyListGraph<Long, Integer> mapGraph = new AdjacencyListGraph<Long, Integer>();
-		
+	private class Node {
 		AdjacencyListGraph<Long, Integer>.Node node;
 		
 		HashSet<Node> AdjancentList; 
@@ -115,25 +113,24 @@ public class DiverMin implements SewerDiver {
 			node = mapGraph.addNode(id);
 			nodeMap.put(id, this);
 		}
+	}
+	
+	void connect(Node n1, Node n2) {
+		if(n1.AdjancentList.contains(n2))
+			return;
 		
-		static void connect(Node n1, Node n2) {
-			if(n1.AdjancentList.contains(n2))
-				return;
-			
-			n1.AdjancentList.add(n2);
-			n2.AdjancentList.add(n1);
-			mapGraph.addEdge(n1.node, n2.node, 1);
-			mapGraph.addEdge(n2.node, n1.node, 1);
-		}
-		
-		static boolean contains(Long id) {
-			return nodeMap.containsKey(id);
-		}
-		
-		static Node getNode(Long id) {
-			return nodeMap.get(id);
-		}
-		
+		n1.AdjancentList.add(n2);
+		n2.AdjancentList.add(n1);
+		mapGraph.addEdge(n1.node, n2.node, 1);
+		mapGraph.addEdge(n2.node, n1.node, 1);
+	}
+	
+	boolean contains(Long id) {
+		return nodeMap.containsKey(id);
+	}
+	
+	Node getNode(Long id) {
+		return nodeMap.get(id);
 	}
 	
 	private void navigateTo(FindState state, Node source, Node target) {
@@ -250,16 +247,18 @@ public class DiverMin implements SewerDiver {
 			HashSet<game.Node> tempVisited = new HashSet<game.Node>();
 			int pathScore = 0;
 			int noOfNodes = 0;
+			System.out.println(1);
 			for(game.Node n: curPath) {
+				System.out.println(2);
 				tempVisited.add(n);
 				noOfNodes++;
 				if(fleeVisited.contains(n)) 
 					pathScore-=VISITED_NEG;
 				else
 					pathScore = (int)(pathScore + VISITED_POS - noOfNodes*0.9 + n.getTile().coins()*1.1);
-				
 			}
 			for(game.Node n : curPathToExit) {
+				System.out.println(3);
 				noOfNodes++;
 				if(fleeVisited.contains(n) || tempVisited.contains(n)) 
 					pathScore-=EX_VISITED_NEG;
