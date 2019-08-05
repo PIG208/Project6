@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -534,6 +535,8 @@ public class GameState implements FindState, FleeState {
 		return state.getScore();
 	}
 
+	static java.util.HashSet<Integer[]> map = new java.util.HashSet<Integer[]>(); 
+	static int high = 44006;
 	/** Execute find-ring and flee on a random seed, except that: <br>
 	 * (1) If there is a parameter -s <seed>, run on that seed OR <br>
 	 * (2) If there is a parameter -n <count>, run count times on random seeds. */
@@ -563,13 +566,56 @@ public class GameState implements FindState, FleeState {
 		}
 
 		int totalScore= 0;
+		java.io.File f = new java.io.File("score.csv");
+		if(!f.exists())
+			f.createNewFile();
+		int[] params = new int[] {20, 100, 20, 100, 63};
 		for (int i= 0; i < numTimesToRun; i++ ) {
-			totalScore+= runNewGame(seed, false, new DiverMin());
-			if (seed != 0) seed= new Random(seed).nextLong();
+			String[] paramTitles = new String[] {"vpos", "vneg", "ex_vpos", "ex_vneg", "mlimit"};
+			int[] temp = randomize(params, 0.9f);
+			DiverMin.VISITED_POS = temp[0];
+			DiverMin.VISITED_NEG = temp[1];
+			DiverMin.EX_VISITED_POS = temp[2];
+			DiverMin.EX_VISITED_NEG = temp[3];
+			DiverMin.MOVE_LIMIT = temp[4];
+			int score = runNewGame(seed, false, new DiverMin());
+			GameState.write(f, params, paramTitles, score);
+			if(score > high) {
+				System.out.print("*****************HIGH**********************");
+				high = score;
+			}
+			totalScore+= score;
+			//if (seed != 0) seed= new Random(seed).nextLong();
 			outPrintln("");
 		}
+		System.out.println("HIGH: " + high);
 
 		outPrintln("Average score : " + totalScore / numTimesToRun);
+	}
+	
+	static int[] randomize(int[] params, float range){
+		int[] result = params.clone();
+		for(int i = 0; i < params.length; i++) {
+			result[i] = (int)(params[i] * (1 + new Random().nextFloat()*range - range/2));
+		}
+		return result;
+	}
+	
+	static void write(java.io.File f, int[] parameters, String[] parameterTitles, int score) {
+		if(score < high)
+			return;
+		try {
+			java.io.FileWriter fw = new java.io.FileWriter(f);
+			fw.write("score: " + score + ",");
+			for(int i = 0; i < parameters.length; i++) {
+				fw.write(parameterTitles[i] + ":" + parameters[i] + ",");
+			}
+			fw.write("\n");
+			fw.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	static void outPrintln(String s) {
