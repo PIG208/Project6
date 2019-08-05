@@ -569,9 +569,12 @@ public class GameState implements FindState, FleeState {
 		java.io.File f = new java.io.File("score.csv");
 		if(!f.exists())
 			f.createNewFile();
-		int[] params = new int[] {20, 100, 20, 100, 63};
+		String[] paramTitles = new String[] {"vpos", "vneg", "ex_vpos", "ex_vneg", "mlimit"};
+		int[] params = new int[] {DiverMin.VISITED_POS, DiverMin.VISITED_NEG, DiverMin.EX_VISITED_POS, DiverMin.EX_VISITED_NEG, DiverMin.MOVE_LIMIT};
+		for(int i = 0;i < params.length; i++)
+			System.out.print(paramTitles[i] + params[i] + ", ");
+		System.out.println();
 		for (int i= 0; i < numTimesToRun; i++ ) {
-			String[] paramTitles = new String[] {"vpos", "vneg", "ex_vpos", "ex_vneg", "mlimit"};
 			int[] temp = randomize(params, 0.9f);
 			DiverMin.VISITED_POS = temp[0];
 			DiverMin.VISITED_NEG = temp[1];
