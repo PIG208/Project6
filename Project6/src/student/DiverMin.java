@@ -49,11 +49,11 @@ public class DiverMin implements SewerDiver {
 	//The extra priority added to the neighbors
 	static final int EX_PRIOR = 1;
 	//These magic numbers are parameters optimizing result through learning
-	static final int VISITED_POS = 17;
-	static final int VISITED_NEG = 82;
-	static final int EX_VISITED_POS = 22;
-	static final int EX_VISITED_NEG = 132;
-	static final int MOVE_LIMIT = 63;
+	static final int VISITED_POS = 13;
+	static final int VISITED_NEG = 74;
+	static final int EX_VISITED_POS = 24;
+	static final int EX_VISITED_NEG = 84;
+	static final int MOVE_LIMIT = 49;
 	
 	HashSet<Long> visited;
 	HashMap<Long, Node> nodeMap = new HashMap<Long, Node>();
