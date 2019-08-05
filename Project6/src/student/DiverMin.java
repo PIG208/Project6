@@ -2,13 +2,11 @@ package student;
 
 import static a5.GraphAlgorithms.shortestPath;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Stack;
 
 import a4.Heap;
 import a5.GraphAlgorithms;
@@ -17,8 +15,6 @@ import game.FleeState;
 import game.NodeStatus;
 import game.SewerDiver;
 import graph.AdjacencyListGraph;
-
-import common.NotImplementedError;
 
 public class DiverMin implements SewerDiver {
 
@@ -74,8 +70,6 @@ public class DiverMin implements SewerDiver {
 			Node source = getNode(state.currentLocation());
 			Node optimal = (headHeap.size() > 0)?headHeap.peek():null;
 			
-			// neighbors.size() is 0: 
-			// neighbors.size() >  0: 
 			for(NodeStatus nodeStatus : state.neighbors()) {
 				if(!visited.contains(nodeStatus.getId())) {
 					Node target;
@@ -101,8 +95,6 @@ public class DiverMin implements SewerDiver {
 		return;
 	}
 	
-	//-5294851052382533493
-	//-8915455580838214402
 	private class Node {
 		AdjacencyListGraph<Long, Integer>.Node node;
 		
@@ -149,7 +141,7 @@ public class DiverMin implements SewerDiver {
 			visited.add(node.getData());
 		}
 	}
-	//397714234465580674
+
 	/** Flee the sewer system before the steps are all used, trying to <br>
 	 * collect as many coins as possible along the way. Your solution must ALWAYS <br>
 	 * get out before the steps are all used, and this should be prioritized above<br>
@@ -189,7 +181,6 @@ public class DiverMin implements SewerDiver {
 		}
 		
 		navigateTo(state, state.currentNode(), state.getExit());
-		System.out.printf("return with pos: %d, neg: %d, expos: %d, exneg: %d, movelimit: %d\n",VISITED_POS, VISITED_NEG, EX_VISITED_POS, EX_VISITED_NEG, MOVE_LIMIT);
 	}
 	
 	/**
@@ -214,9 +205,6 @@ public class DiverMin implements SewerDiver {
 	 */
 	private boolean navigateTo(FleeState state, game.Node source, game.Node target) {
 		List<game.Node> path = shortestPath(source, target);
-		/*if(path.size() <= 1) {
-			return false;
-		}*/
 		for(game.Node node:path) {
 			if(state.currentNode().equals(node)) {
 				continue;
@@ -238,7 +226,6 @@ public class DiverMin implements SewerDiver {
 	private game.Node bestDST(FleeState state, boolean revisit) {
 		int bestScore = Integer.MIN_VALUE;
 		game.Node bestDST = null;
-		int count = 0;
 		for(game.Node node : state.allNodes()) {
 			//When there's no unvisited node in reachable range(withim MOVE_LIMIT), bestDST cease restraining target node to be unvisited
 			if(fleeVisited.contains(node) && !revisit) 
@@ -270,11 +257,6 @@ public class DiverMin implements SewerDiver {
 				bestScore = pathScore;
 				bestDST = node;
 			}
-		}
-		//System.out.println("DST: " + (bestDST!=null?bestDST.getId():"null"));
-		//System.out.println("======================");
-		if(bestDST != null && bestDST.getId() == 350) {
-			System.out.print(350);
 		}
 		return bestDST;
 	}
